@@ -11,8 +11,8 @@ on:
   # Each OS needs a time of day distinct from other apps, LoopWorkspace uses 9 every Wed and 7 every 1st of month
   schedule:
     # avoid starting an action at hh:00 when GitHub resources are impacted
-    - cron: "33 9 * * 3" # Checks for updates at 09:33 UTC every Wednesday
-    - cron: "33 7 1 * *" # Builds the app on the 1st of every month at 07:33 UTC
+  #  - cron: "33 9 * * 3" # Checks for updates at 09:33 UTC every Wednesday
+  #  - cron: "33 7 1 * *" # Builds the app on the 1st of every month at 07:33 UTC
 
 env:
   UPSTREAM_REPO: LoopKit/LoopWorkspace
