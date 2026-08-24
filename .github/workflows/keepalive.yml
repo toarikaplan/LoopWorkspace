@@ -1,0 +1,42 @@
+name: Keepalive (prevent scheduled-workflow auto-disable)
+
+# Why this exists:
+# GitHub automatically disables scheduled Actions in a repo that has had no
+# commit activity for 60 days. When Loop's release branch is quiet, nothing
+# commits to your fork, so "4. Build Loop" gets disabled and automatic builds
+# stop. This workflow pushes an empty commit to a dedicated "keepalive" branch
+# on a regular cadence so the repo always looks active and the schedule stays on.
+#
+# It commits using GH_PAT (your personal access token) on purpose: commits made
+# with the built-in GITHUB_TOKEN are NOT counted as activity by GitHub, so they
+# would not reset the 60-day timer. GH_PAT commits do count.
+
+on:
+  workflow_dispatch:        # lets you run it manually to test
+  schedule:
+    - cron: "0 8 1,15 * *"  # 08:00 UTC on the 1st and 15th of every month
+
+jobs:
+  keepalive:
+    # Never run on the upstream repo (only on your fork)
+    if: github.repository_owner != 'LoopKit'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Push empty keepalive commit
+        run: |
+          set -e
+          git config user.name "keepalive-bot"
+          git config user.email "keepalive-bot@users.noreply.github.com"
+
+          # Base the keepalive branch on the current default branch, then add a
+          # single empty commit. Reset each run so the branch never grows.
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          git checkout -B keepalive "origin/${DEFAULT_BRANCH}"
+          git commit --allow-empty -m "keepalive: $(date -u +'%Y-%m-%d') keep scheduled builds enabled"
+          git push --force origin keepalive
